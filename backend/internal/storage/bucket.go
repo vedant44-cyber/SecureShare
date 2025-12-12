@@ -18,11 +18,11 @@ func NewS3Client(cfg *config.Config, ctx context.Context) (*minio.Client, error)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("S3 is working")
+	
 	_, err = client.ListBuckets(ctx)
 	if err != nil {
 		return nil, err
 	}
-
+	fmt.Println("Connected to S3 storage successfully")	
 	return client, nil
 }
