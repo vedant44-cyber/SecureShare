@@ -4,7 +4,6 @@ import "log"
 
 func ErrorHandler(err error) {
 	if err != nil {
-		log.Panic(err)
-
+		log.Fatalf("%v\n", err)
 	}
 }
