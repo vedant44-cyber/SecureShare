@@ -23,13 +23,12 @@ func main() {
 	// redisclient
 	redisclient, err := database.NewRedisClient(cfg, ctx)
 	helper.ErrorHandler(err)
-	//fmt.Println("starting the redis\n", redisclient, ctx)
 
 	// s3client
 	s3client, err := storage.NewS3Client(cfg, ctx)
 	helper.ErrorHandler(err)
-	//fmt.Println("starting the s3\n", s3client, ctx)
 
+	// for easy passing multiple dependencies
 	dependency := &handlers.HandlerDependencies{
 		RedisClient: redisclient,
 		S3Client:    s3client,
@@ -42,5 +41,5 @@ func main() {
 	fmt.Println(r)
 
 	//start server
-
+	helper.ErrorHandler(r.Run(":" + cfg.Port))
 }
