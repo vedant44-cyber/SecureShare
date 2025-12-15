@@ -18,8 +18,8 @@ func main() {
 	// Load configuration
 	cfg, err := config.Load()
 	helper.ErrorHandler(err)
-	
 
+	
 	// redisclient
 	redisclient, err := database.NewRedisClient(cfg, ctx)
 	helper.ErrorHandler(err)
