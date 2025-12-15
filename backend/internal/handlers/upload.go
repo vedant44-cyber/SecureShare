@@ -34,7 +34,8 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 	downloadLimit := 0
 	if limitStr != "" {
 		n, err := strconv.Atoi(limitStr)
-		if err != nil || n < 0 {
+		// download limit 1 hour to 30 days
+		if err != nil || n < 0 || n > 720 {
 			c.JSON(400, gin.H{"error": "invalid download_limit"})
 			return
 		}
@@ -46,7 +47,7 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "filename is required"})
 		return
 	}
-	filename:= helper.SanitizeFilename(rawfilename)
+	filename := helper.SanitizeFilename(rawfilename)
 
 	//  Get encrypted blob from frontend
 	fileHeader, err := c.FormFile("file")
