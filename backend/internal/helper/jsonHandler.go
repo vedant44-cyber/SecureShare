@@ -19,10 +19,10 @@ type UploadResponse struct {
 	Message       string `json:"message"`
 }
 
-func BuildFileMetaJSON(s3Key string, Size int64, uploadedAt int64, ttl int, downloadLimit int, filename string) (string, error) {
+func BuildFileMetaJSON(s3Key string, size int64, uploadedAt int64, ttl int, downloadLimit int, filename string) (string, error) {
 	metaObj := FileMeta{
 		S3Key:         s3Key,
-		Size:          Size,
+		Size:          size,
 		UploadedAt:    uploadedAt,
 		TTLHours:      ttl,
 		DownloadLimit: downloadLimit,

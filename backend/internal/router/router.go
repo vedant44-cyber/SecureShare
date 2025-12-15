@@ -9,7 +9,7 @@ import (
 func NewRouter(dependency *handlers.HandlerDependencies) (*gin.Engine, error) {
 	// Router initialization logic goes here
 	r := gin.New()
-	//TODO build coustum middleware 
+	//TODO build custom middleware 
 	// Middleware setup for logging and recovery
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())

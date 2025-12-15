@@ -13,7 +13,7 @@ import (
 )
 
 // Implementation for handling file upload will go here
-// input parametes -TTL(string) in hour,Download_limit (string),file(file),filename(string),
+// input parameters -TTL(string) in hour,Download_limit (string),file(file),filename(string),
 func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -41,11 +41,12 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 		downloadLimit = n
 	}
 
-	filename := helper.SanitizeFilename(c.PostForm("filename"))
-	if filename == "" {
+	rawfilename := helper.SanitizeFilename(c.PostForm("filename"))
+	if rawfilename == "" {
 		c.JSON(400, gin.H{"error": "filename is required"})
 		return
 	}
+	filename:= helper.SanitizeFilename(rawfilename)
 
 	//  Get encrypted blob from frontend
 	fileHeader, err := c.FormFile("file")
