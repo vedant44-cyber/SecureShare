@@ -12,6 +12,11 @@ import (
 	"github.com/minio/minio-go/v7"
 )
 
+const (
+	maxTTLHours      = 720  // 30 days
+	maxDownloadLimit = 1000 // reasonable cap
+)
+
 // Implementation for handling file upload will go here
 // input parameters -TTL(string) in hour,Download_limit (string),file(file),filename(string),
 func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
@@ -22,7 +27,7 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 	ttl := 0
 	if ttlStr != "" {
 		n, err := strconv.Atoi(ttlStr)
-		if err != nil || n < 0 {
+		if err != nil || n < 0 || n > maxTTLHours {
 			c.JSON(400, gin.H{"error": "invalid ttl"})
 			return
 		}
@@ -34,8 +39,7 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 	downloadLimit := 0
 	if limitStr != "" {
 		n, err := strconv.Atoi(limitStr)
-		// download limit 1 hour to 30 days
-		if err != nil || n < 0 || n > 720 {
+		if err != nil || n < 0 || n > maxDownloadLimit {
 			c.JSON(400, gin.H{"error": "invalid download_limit"})
 			return
 		}
