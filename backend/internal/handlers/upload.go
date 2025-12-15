@@ -105,7 +105,7 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 			log.Printf("rollback failed: unable to remove s3 object key=%s: %v", s3Key, removeErr)
 		}
 		c.JSON(500, gin.H{"error": "Upload failed. Please try again later."})
-		log.Printf("json marshal failed for metaKey=%s: %v", metaKey, err)
+		log.Printf("failed to build file metadata for metaKey=%s: %v", metaKey, err)
 		return
 	}
 	// write to redis
@@ -117,7 +117,6 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 		}
 		c.JSON(503, gin.H{"error": "Service temporarily unavailable. Please retry."})
 		log.Printf("redis SET failed for metaKey=%s: %v", metaKey, err)
-
 		return
 	}
 	// download_limit =0 means unlimited downloads
