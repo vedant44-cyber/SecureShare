@@ -1,9 +1,11 @@
 package handlers
 
 import (
-	"fmt"
+	"log"
 	"strconv"
 	"time"
+
+	"secure-share/internal/helper"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -11,11 +13,11 @@ import (
 )
 
 // Implementation for handling file upload will go here
-// input parametes -TTL(integer) in sec,Download_limit (integer),file(binaryFile),filename(string),
+// input parametes -TTL(string) in hour,Download_limit (string),file(file),filename(string),
 func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	//  Parse TTL (optional)
+	//  Parse TTL parameter
 	ttlStr := c.PostForm("ttl")
 	ttl := 0
 	if ttlStr != "" {
@@ -39,7 +41,7 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 		downloadLimit = n
 	}
 
-	filename := c.PostForm("filename")
+	filename := helper.SanitizeFilename(c.PostForm("filename"))
 	if filename == "" {
 		c.JSON(400, gin.H{"error": "filename is required"})
 		return
@@ -75,7 +77,8 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(500, gin.H{"error": "s3 upload failed", "detail": err.Error()})
+		log.Printf("s3 upload failed for key=%s: %v", s3Key, err)
+		c.JSON(503, gin.H{"error": "Service temporarily unavailable. Please retry."})
 		return
 	}
 
@@ -85,33 +88,34 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 
 	uploadedAt := time.Now().Unix()
 
-	// TTL duration
+	// TTL duration in hours
 	var expire time.Duration
 	if ttl > 0 {
-		expire = time.Duration(ttl) * time.Second
+		expire = time.Duration(ttl) * time.Hour
 	} else {
 		expire = 0
 	}
 
 	// Store meta data as JSON string
-	meta := fmt.Sprintf(
-		`{"s3_key":"%s","size":%d,"uploaded_at":%d,"ttl_seconds":%d,"download_limit":%d,"filename":"%s"}`,
-		s3Key,
-		uploadInfo.Size,
-		uploadedAt,
-		ttl,
-		downloadLimit,
-		filename,
-	)
-
+	meta, err := helper.BuildFileMetaJSON(s3Key, uploadInfo.Size, uploadedAt, ttl, downloadLimit, filename)
+	if err != nil {
+		// rollback S3 object
+		depends.S3Client.RemoveObject(ctx, depends.Config.S3Bucket, s3Key, minio.RemoveObjectOptions{})
+		c.JSON(500, gin.H{"error": "Upload failed. Please try again later."})
+		log.Printf("json marshal failed for metaKey=%s: %v", metaKey, err)
+		return
+	}
+	// write to redis
 	err = depends.RedisClient.Set(ctx, metaKey, meta, expire).Err()
 	if err != nil {
 		// rollback S3 object
 		depends.S3Client.RemoveObject(ctx, depends.Config.S3Bucket, s3Key, minio.RemoveObjectOptions{})
-		c.JSON(500, gin.H{"error": "metadata write failed"})
+		c.JSON(503, gin.H{"error": "Service temporarily unavailable. Please retry."})
+		log.Printf("redis SET failed for metaKey=%s: %v", metaKey, err)
+
 		return
 	}
-
+	// download_limit =0 means unlimited downloads
 	// Store download limit (if > 0)
 	if downloadLimit > 0 {
 		err = depends.RedisClient.Set(ctx, limitKey, downloadLimit, expire).Err()
@@ -119,17 +123,13 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 			// rollback both
 			depends.RedisClient.Del(ctx, metaKey)
 			depends.S3Client.RemoveObject(ctx, depends.Config.S3Bucket, s3Key, minio.RemoveObjectOptions{})
-			c.JSON(500, gin.H{"error": "limit write failed"})
+			c.JSON(500, gin.H{"error": "Upload failed. Please try again later."})
 			return
 		}
 	}
 
 	// Return response
-	c.JSON(200, gin.H{
-		"file_id":        fileID,
-		"size":           uploadInfo.Size,
-		"ttl_seconds":    ttl,
-		"download_limit": downloadLimit,
-		"filename":       filename,
-	})
+	response := helper.BuildUploadResponse(fileID, uploadInfo.Size, ttl, downloadLimit, filename)
+	c.JSON(201, response)
+	// resource created successfully
 }
