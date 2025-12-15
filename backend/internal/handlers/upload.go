@@ -42,12 +42,16 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 		downloadLimit = n
 	}
 
-	rawfilename := helper.SanitizeFilename(c.PostForm("filename"))
+	rawfilename := c.PostForm("filename")
 	if rawfilename == "" {
 		c.JSON(400, gin.H{"error": "filename is required"})
 		return
 	}
 	filename := helper.SanitizeFilename(rawfilename)
+	if filename == "file" {
+		c.JSON(400, gin.H{"error": "invalid filename"})
+		return
+	}
 
 	//  Get encrypted blob from frontend
 	fileHeader, err := c.FormFile("file")
