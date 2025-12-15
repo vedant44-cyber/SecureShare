@@ -101,7 +101,9 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 	meta, err := helper.BuildFileMetaJSON(s3Key, uploadInfo.Size, uploadedAt, ttl, downloadLimit, filename)
 	if err != nil {
 		// rollback S3 object
-		depends.S3Client.RemoveObject(ctx, depends.Config.S3Bucket, s3Key, minio.RemoveObjectOptions{})
+		if removeErr := depends.S3Client.RemoveObject(ctx, depends.Config.S3Bucket, s3Key, minio.RemoveObjectOptions{}); removeErr != nil {
+			log.Printf("rollback failed: unable to remove s3 object key=%s: %v", s3Key, removeErr)
+		}
 		c.JSON(500, gin.H{"error": "Upload failed. Please try again later."})
 		log.Printf("json marshal failed for metaKey=%s: %v", metaKey, err)
 		return
@@ -110,7 +112,9 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 	err = depends.RedisClient.Set(ctx, metaKey, meta, expire).Err()
 	if err != nil {
 		// rollback S3 object
-		depends.S3Client.RemoveObject(ctx, depends.Config.S3Bucket, s3Key, minio.RemoveObjectOptions{})
+		if removeErr := depends.S3Client.RemoveObject(ctx, depends.Config.S3Bucket, s3Key, minio.RemoveObjectOptions{}); removeErr != nil {
+			log.Printf("rollback failed: unable to remove s3 object key=%s: %v", s3Key, removeErr)
+		}
 		c.JSON(503, gin.H{"error": "Service temporarily unavailable. Please retry."})
 		log.Printf("redis SET failed for metaKey=%s: %v", metaKey, err)
 
@@ -122,8 +126,12 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 		err = depends.RedisClient.Set(ctx, limitKey, downloadLimit, expire).Err()
 		if err != nil {
 			// rollback both
-			depends.RedisClient.Del(ctx, metaKey)
-			depends.S3Client.RemoveObject(ctx, depends.Config.S3Bucket, s3Key, minio.RemoveObjectOptions{})
+			if delErr := depends.RedisClient.Del(ctx, metaKey).Err(); delErr != nil {
+				log.Printf("rollback failed: unable to delete redis key=%s: %v", metaKey, delErr)
+			}
+			if removeErr := depends.S3Client.RemoveObject(ctx, depends.Config.S3Bucket, s3Key, minio.RemoveObjectOptions{}); removeErr != nil {
+				log.Printf("rollback failed: unable to remove s3 object key=%s: %v", s3Key, removeErr)
+			}
 			c.JSON(500, gin.H{"error": "Upload failed. Please try again later."})
 			return
 		}
