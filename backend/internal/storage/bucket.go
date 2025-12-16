@@ -18,11 +18,21 @@ func NewS3Client(cfg *config.Config, ctx context.Context) (*minio.Client, error)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	_, err = client.ListBuckets(ctx)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Connected to S3 storage successfully")	
+	fmt.Println("Connected to S3 storage successfully")
 	return client, nil
+}
+func FileExists(ctx context.Context, s3 *minio.Client, S3Bucket string, filename string) bool {
+
+	_, err := s3.StatObject(ctx, S3Bucket, filename, minio.StatObjectOptions{})
+	return err == nil
+
+}
+func DeleteFile(ctx context.Context, s3 *minio.Client, S3Bucket string, objectName string) error {
+	err := s3.RemoveObject(ctx, S3Bucket, objectName, minio.RemoveObjectOptions{})
+	return err
 }
