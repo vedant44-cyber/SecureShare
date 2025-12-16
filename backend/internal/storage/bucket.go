@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"log"
 	"secure-share/internal/config"
 
 	"github.com/minio/minio-go/v7"
@@ -35,4 +36,20 @@ func FileExists(ctx context.Context, s3 *minio.Client, S3Bucket string, filename
 func DeleteFile(ctx context.Context, s3 *minio.Client, S3Bucket string, objectName string) error {
 	err := s3.RemoveObject(ctx, S3Bucket, objectName, minio.RemoveObjectOptions{})
 	return err
+}
+func GetFileFromS3(ctx context.Context, s3 *minio.Client, bucket string, objectKey string) (*minio.Object, error) {
+	obj, err := s3.GetObject(ctx, bucket, objectKey, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+
+}
+
+func CleanupExpiredFiles(ctx context.Context, s3 *minio.Client, s3Key string, bucket string)  {
+	err := s3.RemoveObject(ctx, bucket, s3Key, minio.RemoveObjectOptions{})
+	if err != nil {
+		log.Printf("cleanup: failed to delete S3 object %s/%s: %v", bucket, s3Key, err)
+	}
+		
 }
