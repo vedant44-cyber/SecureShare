@@ -75,10 +75,10 @@ func GetDownloadLimit(ctx context.Context, rdb *redis.Client, limitKey string) (
 
 func CleanupExpiredKeys(ctx context.Context, rdb *redis.Client, metaKey, limitKey string) {
 	if err := rdb.Del(ctx, limitKey).Err(); err != nil {
-		fmt.Printf("cleanup: failed to delete Redis keys %s and %s: %v\n", metaKey, limitKey, err)
+		fmt.Printf("cleanup: failed to delete Redis key %s : %v\n", limitKey, err)
 	}
 	if err := rdb.Del(ctx, metaKey).Err(); err != nil {
-		fmt.Printf("cleanup: failed to delete Redis keys %s and %s: %v\n", metaKey, limitKey, err)
+		fmt.Printf("cleanup: failed to delete Redis key %s: %v\n", metaKey, err)
 	}
 }
 
@@ -87,5 +87,5 @@ func LimitExist(ctx context.Context, rdb *redis.Client, limitKey string) bool {
 	if err != nil {
 		return false
 	}
-	return val == 0
+	return val == 1
 }
