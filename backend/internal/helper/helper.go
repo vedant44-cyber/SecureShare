@@ -1,10 +1,14 @@
 package helper
 
 import (
+	"encoding/json"
+	"errors"
 	"log"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 func ErrorHandler(err error) {
@@ -36,4 +40,25 @@ func SanitizeFilename(name string) string {
 	}
 
 	return name
+}
+
+func SanitizeFileID(id string) (string, error) {
+	// Basic validation for UUID format
+	u, err := uuid.Parse(id)
+	if err != nil {
+		return "", err
+	}
+	if u.Version() != 4 {
+		return "", errors.New("unsupported uuid version")
+	}
+	return u.String(), nil
+}
+
+func ParseFileMetaJSON(metaJSON string) (FileMeta, error) {
+	var meta FileMeta
+	err := json.Unmarshal([]byte(metaJSON), &meta)
+	if err != nil {
+		return FileMeta{}, err
+	}
+	return meta, nil
 }

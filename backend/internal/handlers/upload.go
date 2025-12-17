@@ -24,7 +24,7 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 
 	//  Parse TTL parameter
 	ttlStr := c.PostForm("ttl")
-	ttl := 0
+	ttl := 0	// default no expiration
 	if ttlStr != "" {
 		n, err := strconv.Atoi(ttlStr)
 		if err != nil || n < 0 || n > maxTTLHours {
@@ -36,7 +36,7 @@ func (depends *HandlerDependencies) HandleUpload(c *gin.Context) {
 
 	// Parse download_limit
 	limitStr := c.PostForm("download_limit")
-	downloadLimit := 0
+	downloadLimit := maxDownloadLimit // default unlimited downloads
 	if limitStr != "" {
 		n, err := strconv.Atoi(limitStr)
 		if err != nil || n < 0 || n > maxDownloadLimit {
