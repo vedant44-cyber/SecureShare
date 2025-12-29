@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"secure-share/internal/config"
 
@@ -24,7 +23,7 @@ func NewS3Client(cfg *config.Config, ctx context.Context) (*minio.Client, error)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Connected to S3 storage successfully")
+
 	return client, nil
 }
 

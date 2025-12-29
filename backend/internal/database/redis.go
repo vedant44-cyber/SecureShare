@@ -25,7 +25,7 @@ func NewRedisClient(cfg *config.Config, ctx context.Context) (*redis.Client, err
 	if _, err := client.Ping(ctx).Result(); err != nil {
 		return nil, err
 	}
-	fmt.Println("Connected to Redis successfully")
+
 	return client, nil
 }
 func GetMetaJSON(ctx context.Context, rdb *redis.Client, metaKey string) (string, error) {
