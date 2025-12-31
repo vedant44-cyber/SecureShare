@@ -8,7 +8,7 @@ Unlike traditional cloud storage, SecureShare operates on a Zero-Trust model: th
 
 ---
 
-
+![SecureShare Screenshot](home.png)
 ## Core Principles
 
 - **Zero Knowledge**
